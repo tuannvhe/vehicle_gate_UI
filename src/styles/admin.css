@@ -1,0 +1,1541 @@
+/* ================================================================
+   ADMIN / MANAGEMENT PAGES — Vehicle Gate UI
+   Dùng chung cho mọi màn quản lý (CRUD): danh sách + bảng dữ liệu, cột
+   hành động (sửa/xóa), modal Create/Edit, form, nút, badge trạng thái,
+   phân trang - TÁI SỬ DỤNG đúng token màu/spacing/shadow/radius khai báo
+   trong app.css (:root, biến --m-*) để đồng bộ 100% với giao diện
+   ScanStation hiện tại, không tạo thêm bảng màu/kích thước riêng.
+
+   BẮT BUỘC: file này PHẢI được import CÙNG với app.css trên trang dùng nó
+   (app.css định nghĩa :root { --m-brand-primary, --m-r-md, --m-shadow-md,
+   --m-font-sans, ... } - admin.css chỉ định nghĩa các class component, tự
+   nó không có token màu/spacing nào). Ví dụ:
+
+     import '../../styles/app.css';
+     import '../../styles/admin.css';
+
+   Cấu trúc HTML mẫu cho 1 màn quản lý:
+
+   <div class="m-page">
+     <header class="m-page__header">
+       <div>
+         <h1 class="m-page__title">Quản lý Làn xe</h1>
+         <p class="m-page__subtitle">Danh sách làn xe và camera gắn kèm</p>
+       </div>
+       <button class="m-btn m-btn--primary"><IconPlus/> Thêm mới</button>
+     </header>
+
+     <div class="m-page__toolbar">
+       <div class="m-search"><IconMagnifyingGlass/><input class="m-search__input" placeholder="Tìm kiếm..." /></div>
+       <select class="m-select">...</select>
+     </div>
+
+     <div class="m-page__card">
+       <div class="m-table-wrap">
+         <table class="m-table">
+           <thead><tr><th>Tên</th><th class="m-table__actions-col">Hành động</th></tr></thead>
+           <tbody>
+             <tr>
+               <td>...</td>
+               <td class="m-table__actions">
+                 <button class="m-table__icon-btn" title="Sửa"><IconPencil/></button>
+                 <button class="m-table__icon-btn m-table__icon-btn--danger" title="Xóa"><IconTrash/></button>
+               </td>
+             </tr>
+           </tbody>
+         </table>
+       </div>
+       <div class="m-pagination">...</div>
+     </div>
+   </div>
+
+   <!-- Modal Create/Edit - tái dùng .m-modal-overlay/.m-modal sẵn có -->
+   <dialog class="m-modal-overlay">
+     <article class="m-modal m-modal--form">
+       <header class="m-modal__header"><h3>Thêm làn xe</h3><button class="m-modal__close">...</button></header>
+       <section class="m-modal__body m-modal__body--form">
+         <div class="m-form-grid">
+           <div class="m-form-field">
+             <label class="m-form-label">Tên làn</label>
+             <input class="m-input" />
+           </div>
+         </div>
+       </section>
+       <footer class="m-modal__footer">
+         <button class="m-btn m-btn--secondary">Hủy</button>
+         <button class="m-btn m-btn--primary">Lưu</button>
+       </footer>
+     </article>
+   </dialog>
+================================================================ */
+
+/* ── Shell (sidebar trái + nội dung) ──
+   Cấu trúc: <div class="m-shell"><aside class="m-sidebar">...</aside>
+   <main class="m-shell__content"><div class="m-page">...</div></main></div>
+   .m-page giữ nguyên bên trong .m-shell__content - không cần đổi gì ở các
+   trang đã dùng .m-page độc lập (không sidebar) trước đó. */
+.m-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.m-shell__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Sidebar nền TỐI (ink) - đồng bộ với header gradient của ScanStation, tạo
+   tương phản thật với vùng nội dung sáng (.m-page) thay vì "trắng viền xanh
+   nhạt" lặp lại y hệt header/thẻ/toolbar như trước. */
+/* Sidebar SÁNG - phẳng, ít trang trí (nền trắng gần như phẳng, viền mảnh,
+   bóng đổ trung tính rất nhẹ) thay vì nền tối/gradient nhiều màu trước đây.
+   Trạng thái "đang chọn" dùng viền trái + nền tint nhạt (xem
+   .m-sidebar__nav-item[data-active]) thay vì tô kín gradient bão hòa -
+   đây là ngôn ngữ thị giác của các dashboard hiện đại (Linear/Notion/
+   Vercel...), tinh tế hơn nhiều so với "pill gradient rực rỡ". */
+.m-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid #eef1f5;
+  box-shadow: 1px 0 0 rgba(15, 23, 42, 0.02), 2px 0 12px rgba(15, 23, 42, 0.03);
+  transition: width var(--m-t-med);
+  position: relative;
+}
+
+/* Thu gọn - chỉ còn icon, ẩn hết nhãn chữ. Nút toggle (.m-sidebar__collapse-btn)
+   nằm đè lên viền phải sidebar, luôn bấm được dù thu gọn hay mở rộng. */
+.m-sidebar[data-collapsed='true'] {
+  width: 76px;
+}
+
+.m-sidebar[data-collapsed='true'] .m-sidebar__brand {
+  justify-content: center;
+  padding: 1.25rem 0.5rem 1rem;
+}
+
+.m-sidebar[data-collapsed='true'] .m-sidebar__nav-item {
+  justify-content: center;
+  padding: 0.65rem;
+}
+
+.m-sidebar[data-collapsed='true'] .m-sidebar__user {
+  justify-content: center;
+  padding: 0.9rem 0.5rem;
+}
+
+.m-sidebar__collapse-btn {
+  position: absolute;
+  top: 1.35rem;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: var(--m-text-muted);
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-sidebar__collapse-btn:hover {
+  background: var(--m-brand-2);
+  color: white;
+  border-color: transparent;
+}
+
+.m-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.m-sidebar__brand img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: var(--m-r-sm);
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.m-sidebar__brand-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--m-text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.m-sidebar__brand-desc {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--m-text-hint);
+  font-weight: 500;
+}
+
+.m-sidebar__nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.m-sidebar__nav-group-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--m-text-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 0.75rem 0.25rem;
+}
+
+.m-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--m-r-md);
+  color: var(--m-text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  width: 100%;
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-sidebar__nav-item svg { flex-shrink: 0; }
+
+/* Ô icon màu riêng cho từng mục (--m-nav-color, gán inline theo NAV_ITEMS) -
+   lấy cảm hứng từ các dashboard nhiều màu (mỗi khối chức năng 1 màu riêng
+   để phân biệt nhanh bằng mắt), nhưng vẫn PHẲNG - nền màu nhạt (mix với
+   trắng qua color-mix), không gradient, không rực rỡ chói mắt. */
+.m-sidebar__nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--m-r-sm);
+  flex-shrink: 0;
+  color: var(--m-nav-color, var(--m-text-muted));
+  background: color-mix(in srgb, var(--m-nav-color, #94a3b8) 14%, white);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-sidebar__nav-item:hover {
+  background: #f8fafc;
+  color: var(--m-text-primary);
+}
+
+.m-sidebar__nav-item:hover .m-sidebar__nav-icon {
+  background: color-mix(in srgb, var(--m-nav-color, #94a3b8) 22%, white);
+}
+
+/* Trạng thái đang chọn - viền trái theo ĐÚNG màu của mục đó (thay vì luôn
+   cùng 1 màu teal cho mọi mục) - nền tint nhạt PHA THEO MÀU RIÊNG, KHÔNG tô
+   kín gradient bão hòa (dễ trông rẻ tiền khi lặp lại cho từng mục). */
+.m-sidebar__nav-item[data-active='true'] {
+  background: color-mix(in srgb, var(--m-nav-color, var(--m-brand-2)) 10%, white);
+  border-left-color: var(--m-nav-color, var(--m-brand-2));
+  color: var(--m-text-primary);
+  font-weight: 700;
+}
+
+.m-sidebar__nav-item[data-active='true'] .m-sidebar__nav-icon {
+  background: var(--m-nav-color, var(--m-brand-2));
+  color: white;
+}
+
+/* Thông tin người đang đăng nhập - LUÔN dính đáy sidebar (margin-top: auto
+   đẩy xuống cuối flex column), tách biệt khỏi nav bằng đường kẻ trên. */
+.m-sidebar__user {
+  margin-top: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.m-sidebar__user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--m-brand-2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.m-sidebar__user-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.m-sidebar__user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--m-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-sidebar__user-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--m-brand-2-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-sidebar__user-logout {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--m-r-sm);
+  border: none;
+  background: transparent;
+  color: var(--m-text-hint);
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-sidebar__user-logout:hover {
+  background: var(--m-color-error-bg);
+  color: var(--m-color-error-text);
+}
+
+/* ── Page shell ──
+   --m-page-accent: mỗi trang quản lý gán 1 màu riêng (m-page--logs/--manual/
+   --lanes/--cameras/--cards trong JSX), KHỚP với màu icon mục đó ở sidebar
+   (xem NAV_ITEMS trong AdminLayout.tsx) - để cả sidebar lẫn nội dung trang
+   cùng 1 "nhận diện màu", tránh cảm giác mọi trang đều same-same. */
+.m-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* Nền phẳng, 1 tông duy nhất - enterprise/flat thay vì 2 vệt glow màu. */
+  background: #f4f6f8;
+  padding: 1.25rem clamp(1rem, 2vw, 2rem);
+  --m-page-accent: var(--m-brand-2);
+}
+
+.m-page--logs     { --m-page-accent: #6366f1; }
+.m-page--manual   { --m-page-accent: #0891b2; }
+.m-page--lanes    { --m-page-accent: #a855f7; }
+.m-page--cameras  { --m-page-accent: #ec4899; }
+.m-page--cards    { --m-page-accent: #10b981; }
+
+.m-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0.9rem;
+  border-bottom: 1px solid #e5e9ef;
+  /* Vạch màu bên trái tiêu đề - dấu hiệu nhận diện màu của TRANG này, đồng
+     bộ với màu icon mục tương ứng ở sidebar. */
+  border-left: 4px solid var(--m-page-accent);
+}
+
+.m-page__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 1vw + 1rem, 1.6rem);
+  font-weight: 800;
+  color: var(--m-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.m-page__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--m-text-muted);
+  font-weight: 500;
+}
+
+/* Khung lọc - tách hẳn thành 1 khối riêng (nền trắng, viền, vạch màu trên
+   cùng theo màu nhận diện trang) thay vì trôi nổi giữa tiêu đề và bảng như
+   trước - đây là 1 trong 3 "khối layout" của mỗi trang quản lý (tiêu đề /
+   khung lọc / khung bảng), mỗi khối có ranh giới rõ ràng thay vì lẫn vào
+   nền trang. */
+.m-page__toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #ffffff;
+  border-radius: var(--m-r-lg);
+  border: 1px solid #e5e9ef;
+  border-top: 3px solid var(--m-page-accent);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: 1rem 1.25rem;
+}
+
+.m-page__card {
+  background: #ffffff;
+  border-radius: var(--m-r-lg);
+  border: 1px solid #e5e9ef;
+  border-top: 3px solid var(--m-page-accent);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Buttons (dùng chung mọi nơi: toolbar, modal footer, action inline) ── */
+.m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--m-r-md);
+  font-family: var(--m-font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+  white-space: nowrap;
+}
+
+.m-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.m-btn--primary {
+  /* Màu phẳng (không gradient) - dùng màu nhận diện CỦA TRANG đang mở
+     (--m-page-accent, xem .m-page--logs/--manual/... và AdminLayout.tsx),
+     mặc định về teal (--m-brand-2) nếu không nằm trong trang nào set màu
+     riêng. Bóng đổ RẤT NHẸ, cố định (không đổi lúc hover, tránh transform/
+     box-shadow động gây tốn paint) - chỉ đủ để nút tách khỏi nền phẳng. */
+  background: var(--m-page-accent, var(--m-brand-2));
+  color: white;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.m-btn--primary:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.m-btn--secondary {
+  background: white;
+  color: var(--m-text-secondary);
+  border: 1px solid #d7dce3;
+}
+
+.m-btn--secondary:hover:not(:disabled) {
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  color: var(--m-page-accent, var(--m-brand-2-dark));
+}
+
+.m-btn--danger {
+  background: #dc2626;
+  color: white;
+}
+
+.m-btn--danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+/* Nút cảnh báo/xác nhận thủ công (VD "Báo khớp biển do hệ thống đọc lỗi")
+   - nền màu ấm để tách khỏi nút phụ trắng (.m-btn--secondary) vốn dễ bị lẫn
+   vào nền, không phải hành động phá hủy nên không dùng đỏ (.m-btn--danger). */
+.m-btn--warn {
+  background: var(--m-color-warn);
+  color: white;
+}
+
+.m-btn--warn:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.m-btn--sm {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+}
+
+/* ── Form fields (input/select/textarea dùng chung, cùng style với ô đăng nhập) ── */
+.m-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.m-form-grid--single { grid-template-columns: 1fr; }
+
+.m-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.m-form-field--full { grid-column: 1 / -1; }
+
+.m-form-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--m-text-secondary);
+}
+
+.m-form-label__optional {
+  font-weight: 500;
+  color: var(--m-text-hint);
+  font-size: 0.75rem;
+}
+
+.m-form-error {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--m-color-error-text);
+}
+
+.m-input,
+.m-select,
+.m-textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  /* Viền mảnh 1px trên nền TRẮNG (thay vì viền dày 2px + nền xám) - form
+     enterprise hiện đại thường để field trông "sạch" trên nền trắng, dùng
+     ring khi focus để nhấn mạnh thay vì viền dày cố định gây cảm giác nặng. */
+  border: 1px solid #d7dce3;
+  border-radius: var(--m-r-md);
+  font-size: 0.9rem;
+  font-family: var(--m-font-sans);
+  color: var(--m-text-primary);
+  background: #ffffff;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-input::placeholder,
+.m-textarea::placeholder {
+  color: var(--m-text-hint);
+}
+
+.m-textarea {
+  resize: vertical;
+  min-height: 90px;
+  font-family: var(--m-font-sans);
+}
+
+.m-input:focus,
+.m-select:focus,
+.m-textarea:focus {
+  outline: none;
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-page-accent, var(--m-brand-2)) 18%, transparent);
+}
+
+.m-input:disabled,
+.m-select:disabled,
+.m-textarea:disabled {
+  background: #f4f6f8;
+  color: var(--m-text-hint);
+  cursor: not-allowed;
+}
+
+.m-input[data-invalid='true'],
+.m-select[data-invalid='true'],
+.m-textarea[data-invalid='true'] {
+  border-color: var(--m-color-error);
+  background: var(--m-color-error-bg);
+}
+
+/* ── Combobox có ô tìm kiếm (SearchableSelect) - thay <select> ở nơi danh
+   sách lựa chọn có thể phình to (VD chọn Làn). ── */
+.m-searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.m-searchable-select__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #d7dce3;
+  border-radius: var(--m-r-md);
+  font-size: 0.9rem;
+  font-family: var(--m-font-sans);
+  color: var(--m-text-primary);
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-searchable-select__trigger:hover {
+  border-color: var(--m-page-accent, var(--m-brand-2-light));
+}
+
+.m-searchable-select__trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.m-searchable-select__trigger svg {
+  color: var(--m-text-hint);
+  flex-shrink: 0;
+}
+
+.m-searchable-select__placeholder {
+  color: var(--m-text-hint);
+}
+
+.m-searchable-select__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--m-page-accent, var(--m-brand-2));
+  border-radius: var(--m-r-md);
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-page-accent, var(--m-brand-2)) 18%, transparent);
+}
+
+.m-searchable-select__input-wrap svg:first-child {
+  color: var(--m-text-hint);
+  flex-shrink: 0;
+}
+
+.m-searchable-select__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-family: var(--m-font-sans);
+  color: var(--m-text-primary);
+  min-width: 0;
+}
+
+.m-searchable-select__close {
+  border: none;
+  background: transparent;
+  color: var(--m-text-hint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.2rem;
+  border-radius: var(--m-r-sm);
+}
+
+.m-searchable-select__close:hover {
+  background: #f1f5f9;
+  color: var(--m-text-primary);
+}
+
+.m-searchable-select__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--m-r-md);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m-searchable-select__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  background: transparent;
+  border-radius: var(--m-r-sm);
+  font-size: 0.88rem;
+  color: var(--m-text-primary);
+  cursor: pointer;
+  font-family: var(--m-font-sans);
+}
+
+.m-searchable-select__option:hover {
+  background: #f1f5f9;
+}
+
+.m-searchable-select__option[data-active='true'] {
+  background: var(--m-page-accent, var(--m-brand-2));
+  color: #fff;
+  font-weight: 700;
+}
+
+.m-searchable-select__option--clear {
+  color: var(--m-text-muted);
+  border-bottom: 1px solid #eef2f6;
+  border-radius: 0;
+  margin-bottom: 2px;
+  padding-bottom: 0.6rem;
+}
+
+.m-searchable-select__empty {
+  padding: 0.7rem;
+  text-align: center;
+  color: var(--m-text-hint);
+  font-size: 0.85rem;
+}
+
+/* Ô tìm kiếm có icon lồng bên trong - dùng ở toolbar */
+.m-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.m-search svg {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--m-text-hint);
+  pointer-events: none;
+}
+
+/* .m-search lồng trong container CỘT (.m-form-field, .m-filter-panel--compact)
+   - flex:1 1 260px của .m-search vốn dành cho ngữ cảnh HÀNG (toolbar), trong
+   ngữ cảnh CỘT nó bị hiểu nhầm thành chiều CAO tối thiểu 260px, khiến ô tìm
+   kiếm bị kéo giãn dọc bất thường (khoảng trắng lớn phía trên/dưới ô). Reset
+   lại flex/min-width khi lồng trong các container cột này. */
+.m-form-field .m-search,
+.m-filter-panel--compact .m-search {
+  flex: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.m-search__input {
+  width: 100%;
+  padding: 0.65rem 0.9rem 0.65rem 2.6rem;
+  border: 1px solid #d7dce3;
+  border-radius: var(--m-r-full);
+  font-size: 0.875rem;
+  font-family: var(--m-font-sans);
+  background: white;
+  color: var(--m-text-primary);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-search__input:focus {
+  outline: none;
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-page-accent, var(--m-brand-2)) 18%, transparent);
+}
+
+/* ── Data table ── */
+.m-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e9ef;
+  border-radius: var(--m-r-md);
+}
+
+.m-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.m-table thead {
+  background: #f1f4f7;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.m-table th {
+  text-align: left;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--m-text-muted);
+  border-bottom: 1px solid #e5e9ef;
+  white-space: nowrap;
+}
+
+.m-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--m-text-primary);
+  vertical-align: middle;
+}
+
+.m-table tbody tr {
+  transition: background var(--m-t-fast);
+}
+
+.m-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.m-table tbody tr:hover {
+  background: rgba(13, 148, 136, 0.05);
+}
+
+.m-table__row-clickable {
+  cursor: pointer;
+}
+
+.m-table__cell-muted { color: var(--m-text-muted); }
+.m-table__cell-mono { font-family: var(--m-font-mono); }
+
+/* Cột hành động - LUÔN là cột cuối cùng, các nút icon căn phải, dính lại
+   khi cuộn ngang trên bảng rộng (sticky right) để luôn thao tác được. */
+.m-table__actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.m-table__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.m-table__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--m-r-sm);
+  border: 1px solid #e5e9ef;
+  background: white;
+  color: var(--m-text-muted);
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-table__icon-btn:hover {
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  color: var(--m-page-accent, var(--m-brand-2-dark));
+  background: color-mix(in srgb, var(--m-page-accent, var(--m-brand-2)) 10%, white);
+}
+
+.m-table__icon-btn--danger:hover {
+  border-color: var(--m-color-error);
+  color: var(--m-color-error-text);
+  background: var(--m-color-error-bg);
+}
+
+.m-table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--m-text-hint);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.m-table-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  color: var(--m-text-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Spinner dùng chung trong nút (.m-btn) lúc đang thực hiện action (Lưu/Xóa/
+   Đăng xuất...) và trong .m-table-loading lúc tải dữ liệu bảng - 1 kiểu
+   duy nhất cho mọi trạng thái "đang xử lý" trong toàn bộ khu vực quản lý. */
+.m-btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  display: inline-block;
+  animation: m-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.m-btn--secondary .m-btn__spinner,
+.m-table-loading .m-btn__spinner {
+  border-color: rgba(100, 116, 139, 0.25);
+  border-top-color: var(--m-page-accent, var(--m-brand-2));
+}
+
+/* ── Status badge chung (khác .m-ticker__badge - đây dùng trong bảng/form) ── */
+.m-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--m-r-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.m-badge--success { background: var(--m-color-in-bg); color: var(--m-color-in-text); border: 1px solid var(--m-color-in-border); }
+.m-badge--info     { background: var(--m-color-out-bg); color: var(--m-color-out-text); border: 1px solid var(--m-color-out-border); }
+.m-badge--warning  { background: var(--m-color-warn-bg); color: var(--m-color-warn); border: 1px solid var(--m-color-warn-border); }
+.m-badge--error    { background: var(--m-color-error-bg); color: var(--m-color-error-text); border: 1px solid var(--m-color-error-border); }
+.m-badge--neutral  { background: #f1f5f9; color: var(--m-text-muted); border: 1px solid #e2e8f0; }
+
+/* ── Modal variant cho form Create/Edit - tái dùng .m-modal-overlay/.m-modal ──
+   Cả 3 biến thể (--form/--sm/--lg) đều gắn vạch màu accent trên đầu, ĐỒNG BỘ
+   với vạch màu ở tiêu đề trang/khung lọc/khung bảng (xem .m-page__header) -
+   modal của trang nào cũng "cùng 1 bộ nhận diện" với trang đó, thay vì nhìn
+   tách biệt hẳn ra khỏi phần còn lại của trang khi vừa mở lên. Dùng
+   var(--m-page-accent, var(--m-brand-2)) nên modal dùng chung với trang chính
+   (VD xác nhận đăng xuất ở ScanStation) vẫn ra đúng màu teal quen thuộc, an
+   toàn cho cả 2 nơi. */
+.m-modal--form,
+.m-modal--sm,
+.m-modal--lg {
+  border-top: 3px solid var(--m-page-accent, var(--m-brand-2));
+}
+
+.m-modal--form .m-modal__header h3 svg,
+.m-modal--lg .m-modal__header h3 svg {
+  color: var(--m-page-accent, var(--m-brand-2));
+}
+
+.m-modal--form {
+  width: min(640px, 94%);
+  max-height: 90vh;
+}
+
+.m-modal--sm {
+  width: min(420px, 92%);
+}
+
+/* ── Dải thông tin dạng label/value (VD modal xem ảnh log) - thay cho nhồi
+   badge + gạch chấm "·" vào chung 1 câu văn, dễ đọc và scan hơn. ── */
+.m-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-left: 3px solid var(--m-page-accent, var(--m-brand-2));
+  border-radius: var(--m-r-md);
+}
+
+.m-detail-meta dt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--m-text-hint);
+  margin-bottom: 0.3rem;
+}
+
+.m-detail-meta dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--m-text-primary);
+}
+
+.m-detail-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #eef2f6;
+  font-weight: 700;
+  color: var(--m-text-primary);
+}
+
+/* Modal lớn - dùng cho luồng "Cho xe ra thủ công" (danh sách xe kèm ảnh cần
+   nhiều chỗ hơn form thường) và các modal khác cần hiển thị nhiều nội dung
+   cùng lúc. */
+.m-modal--lg {
+  width: min(880px, 96%);
+  max-height: 92vh;
+}
+
+.m-modal__body--form {
+  display: block;
+  padding: 1.5rem 1.75rem;
+}
+
+/* ── Khối lọc (VD "Cho xe ra thủ công") - nền tách biệt khỏi danh sách bên
+   dưới, có tab chuyển giữa "Lọc nhanh" (tương đối) và "Chọn ngày cụ thể"
+   (tuyệt đối, cho phép cả ngày quá khứ) thay vì gộp chung 1 hàng nút. ── */
+.m-filter-panel {
+  padding: 1.1rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #eef2f6;
+}
+
+/* Biến thể GỌN - ô tìm kiếm + toàn bộ lựa chọn khoảng thời gian (pill lọc
+   nhanh, ngày cụ thể, giờ từ/đến) nằm trên 2 hàng ngắn thay vì nhiều khối
+   xếp dọc kèm tiêu đề to (xem ManualExitPage.tsx). */
+.m-filter-panel--compact {
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* Hàng 1 của biến thể gọn - ô tìm kiếm + pill lọc nhanh (tương đối) cùng
+   hàng ngang. Bọc riêng ô search trong div flex:1 để nó không bị co lại
+   nhường chỗ cho hàng pill khi màn hẹp. */
+.m-filter-row-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.m-filter-panel--compact .m-filter-row-top > .m-search {
+  flex: 1 1 240px;
+  width: auto;
+}
+
+/* Khung chọn ngày/giờ cụ thể - TÁCH RIÊNG khỏi hàng pill lọc nhanh phía
+   trên, đóng khung rõ ràng (nền + viền + vạch màu accent bên trái) để bảo
+   vệ nhận ra ngay đây là 1 cách lọc KHÁC (tuyệt đối theo ngày, cho phép cả
+   ngày quá khứ) chứ không lẫn với các pill "N phút/giờ qua". */
+.m-date-time-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e9ef;
+  border-left: 3px solid var(--m-page-accent, var(--m-brand-2));
+  border-radius: var(--m-r-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+.m-date-time-box__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--m-text-secondary);
+  white-space: nowrap;
+  margin-right: 0.2rem;
+}
+
+.m-filter-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: #e9edf2;
+  border-radius: var(--m-r-full);
+  margin-bottom: 1rem;
+}
+
+.m-filter-tab {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: var(--m-r-full);
+  background: transparent;
+  color: var(--m-text-muted);
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-filter-tab[data-active='true'] {
+  background: #fff;
+  color: var(--m-text-primary);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.m-date-filter-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* ── Nút lọc nhanh dạng pill (VD khoảng giờ trong "Cho xe ra thủ công") ── */
+.m-preset-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.m-preset-btn {
+  padding: 0.55rem 1.15rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: var(--m-r-full);
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: var(--m-text-secondary);
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-preset-btn:hover {
+  border-color: var(--m-page-accent, var(--m-brand-2-light));
+  color: var(--m-page-accent, var(--m-brand-2-dark));
+}
+
+.m-preset-btn[data-active='true'] {
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  background: var(--m-page-accent, var(--m-brand-2));
+  color: #fff;
+}
+
+/* Biến thể GỌN - dùng khi pill lọc nhanh đứng chung hàng với ô ngày/giờ
+   (xem .m-preset-row--compact) - nhỏ hơn để cả hàng không quá dài. */
+.m-preset-row--compact {
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m-preset-btn--sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.m-filter-or {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--m-text-hint);
+  padding: 0 0.15rem;
+}
+
+.m-time-input--compact {
+  width: auto;
+  min-width: 0;
+}
+
+/* ── Thẻ xe trong bãi (danh sách chọn để cho ra thủ công) ── */
+.m-vehicle-card {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  border: 1.5px solid #eef2f6;
+  border-radius: var(--m-r-md);
+  padding: 0.65rem 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-vehicle-card:hover {
+  border-color: var(--m-page-accent, var(--m-brand-2-light));
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.m-vehicle-card__photo {
+  width: 96px;
+  height: 70px;
+  border-radius: var(--m-r-sm);
+  overflow: hidden;
+  background: #f1f5f9;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+}
+
+.m-vehicle-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.m-vehicle-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.m-vehicle-card__code {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--m-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m-vehicle-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.m-vehicle-card__meta-item {
+  font-size: 0.82rem;
+  color: var(--m-text-secondary);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Ngày/giờ vào bãi - tách riêng 2 khối (thay vì 1 chuỗi "22/08 11:28:22"
+   dính liền), đóng khung + cỡ chữ lớn hơn hẳn text thường để dễ đọc nhanh
+   khi bảo vệ liếc mắt qua danh sách xe cần xử lý. */
+.m-time-chip-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.4rem;
+}
+
+.m-time-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--m-font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: var(--m-r-sm);
+  padding: 0.1rem 0.45rem;
+}
+
+/* Chip NGÀY - tông xanh dương (liên tưởng lịch/ngày tháng), TÁCH màu rõ với
+   chip GIỜ để mắt phân biệt được ngay 2 phần khác nhau, không chỉ dựa vào
+   khoảng cách giữa chúng. */
+.m-time-chip--date {
+  color: var(--m-color-out-text);
+  background: var(--m-color-out-bg);
+  border: 1px solid var(--m-color-out-border);
+}
+
+/* Chip GIỜ - dùng màu nhận diện của TRANG đang mở (--m-page-accent, xem
+   .m-page--manual) thay vì trung tính, vừa nổi bật vừa đồng bộ với các
+   thành phần khác của trang. */
+.m-time-chip--time {
+  color: white;
+  background: var(--m-page-accent, var(--m-brand-2));
+  border: 1px solid var(--m-page-accent, var(--m-brand-2));
+}
+
+/* Chấm phân cách giữa các mục - thay cho gõ "·" thô lẫn vào text, tách hẳn
+   ra CSS để canh giữa/màu nhạt hơn text chính, không bị dính sát chữ. */
+.m-vehicle-card__meta-item:not(:last-child)::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  margin-left: 0.65rem;
+}
+
+/* ── Ô nhập giờ (input type=time) - phóng to cho dễ chạm/đọc ── */
+.m-time-input {
+  font-size: 1.05rem;
+  padding: 0.6rem 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Checkbox xác nhận (VD "đã kiểm tra giấy tờ xe") ── */
+.m-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--m-r-md);
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--m-text-secondary);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-check-row:has(input:checked) {
+  border-color: var(--m-color-in);
+  background: var(--m-color-in-bg);
+  color: var(--m-color-in-text);
+}
+
+.m-check-row input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--m-brand-2);
+  cursor: pointer;
+}
+
+.m-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem;
+  border-top: 1px solid #e5e9ef;
+  background: #f8fafc;
+}
+
+/* Nội dung xác nhận xóa (dùng trong .m-modal--sm) */
+.m-confirm-text {
+  padding: 1.5rem 1.75rem;
+  color: var(--m-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.m-confirm-text strong { color: var(--m-text-primary); }
+
+/* ── Pagination ── */
+.m-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.m-pagination__info {
+  font-size: 0.825rem;
+  color: var(--m-text-muted);
+  font-weight: 500;
+}
+
+.m-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Lưới an toàn - getPageNumbers() đã rút gọn còn tối đa ~7-9 nút nên
+     không còn tràn ngang trong điều kiện bình thường, nhưng vẫn thêm wrap
+     để không có cách nào tràn khỏi khung dù màn hình rất hẹp. */
+  flex-wrap: wrap;
+}
+
+.m-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  color: var(--m-text-hint);
+  font-weight: 700;
+  user-select: none;
+}
+
+.m-pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.5rem;
+  border-radius: var(--m-r-sm);
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: var(--m-text-secondary);
+  font-weight: 600;
+  font-size: 0.825rem;
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast),
+    color var(--m-t-fast), opacity var(--m-t-fast), filter var(--m-t-fast);
+}
+
+.m-pagination__btn:hover:not(:disabled) {
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  color: var(--m-page-accent, var(--m-brand-2-dark));
+}
+
+.m-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.m-pagination__btn[data-active='true'] {
+  background: var(--m-page-accent, var(--m-brand-2));
+  border-color: var(--m-page-accent, var(--m-brand-2));
+  color: white;
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media (max-width: 900px) {
+  /* Sidebar dọc -> thanh ngang trên đầu, để dành hết chiều ngang cho nội
+     dung (bảng dữ liệu) trên màn hẹp - nav item ẩn chữ, chỉ còn icon. */
+  .m-shell { flex-direction: column; }
+  .m-sidebar {
+    width: 100%;
+    min-height: auto;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .m-sidebar__brand { border-bottom: none; border-right: 1px solid #f1f5f9; }
+  .m-sidebar__nav {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 0.6rem;
+  }
+  .m-sidebar__nav-group-label { display: none; }
+  .m-sidebar__nav-item span { display: none; }
+  .m-sidebar__user {
+    margin-top: 0;
+    border-top: none;
+    border-left: 1px solid #f1f5f9;
+    background: transparent;
+  }
+  .m-sidebar__user-details { display: none; }
+  .m-shell__content { min-height: 0; }
+}
+
+@media (max-width: 640px) {
+  .m-page { padding: 0.85rem; }
+  .m-page__header { flex-direction: column; align-items: stretch; }
+  .m-page__card { padding: 0.85rem; }
+  .m-form-grid { grid-template-columns: 1fr; }
+  .m-pagination { flex-direction: column; align-items: stretch; }
+  .m-pagination__controls { justify-content: center; }
+}
+
+/* ================================================================
+   LOGS PAGE (LogsManagementPage) - zebra striping + căn giữa cột trạng
+   thái trong bảng log để dễ quét mắt hơn bảng phẳng toàn hàng trắng.
+================================================================ */
+.m-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.m-table tbody tr:nth-child(even):hover {
+  background: rgba(13, 148, 136, 0.05);
+}
+
+.m-table--logs th:nth-child(5),
+.m-table--logs td:nth-child(5),
+.m-table--logs th:nth-child(7),
+.m-table--logs td:nth-child(7) {
+  text-align: center;
+}
+
+/* Cột ảnh - class riêng (không dùng nth-child) để chắc chắn header + ô dữ
+   liệu luôn canh giữa đúng nhau, không lệch dù đổi thứ tự cột sau này.
+   Phải viết .m-table th.m-table__thumb-col (không chỉ .m-table__thumb-col)
+   - 1 class đơn có độ đặc hiệu THẤP HƠN ".m-table th" (class+element) nên
+   bị luật text-align:left mặc định đè mất nếu chỉ dùng 1 class. */
+.m-table th.m-table__thumb-col,
+.m-table td.m-table__thumb-col {
+  text-align: center;
+}
+
+/* Nhóm 2 ảnh thumbnail (trước/sau) trong bảng log - xếp cạnh nhau, hàng
+   cao hơn 1 chút so với các cột chữ để nhìn sơ được nội dung ảnh. */
+.m-table__thumb-group {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.m-table__thumb {
+  width: 88px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--m-r-sm);
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  display: block;
+}
+
+.m-table__thumb--empty {
+  width: 88px;
+  height: 64px;
+  margin: 4px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--m-text-hint);
+  border-radius: var(--m-r-sm);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}

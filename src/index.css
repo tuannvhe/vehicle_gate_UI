@@ -1,0 +1,102 @@
+/* ================================================================
+   GLOBAL RESET & BASE — Viantech Vina Light Green Theme
+================================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* ── Brand Colors — Viantech Vina ── */
+  --brand-primary:       #2d9a6b;   /* xanh lá chủ đạo */
+  --brand-primary-light: #3db87e;
+  --brand-primary-dark:  #1e7a52;
+  --brand-primary-pale:  #e6f5ef;
+  --brand-primary-mist:  #f0faf5;
+
+  --brand-secondary:     #1a7a4a;
+  --brand-accent:        #00b96b;
+  --brand-accent-glow:   rgba(45, 154, 107, 0.2);
+
+  /* ── Background ── */
+  --bg-base:      #f2faf6;
+  --bg-surface:   #ffffff;
+  --bg-card:      #ffffff;
+  --bg-input:     #f7fdf9;
+  --bg-hover:     #ecf8f2;
+  --bg-mist:      #f0faf5;
+
+  /* ── Borders ── */
+  --border-subtle: rgba(45, 154, 107, 0.14);
+  --border-mid:    rgba(45, 154, 107, 0.28);
+  --border-bright: rgba(45, 154, 107, 0.55);
+
+  /* ── Semantic ── */
+  --color-in:           #16a34a;
+  --color-in-bg:        #dcfce7;
+  --color-in-border:    #bbf7d0;
+  --color-in-text:      #15803d;
+
+  --color-out:          #0284c7;
+  --color-out-bg:       #e0f2fe;
+  --color-out-border:   #bae6fd;
+  --color-out-text:     #0369a1;
+
+  --color-error:        #dc2626;
+  --color-error-bg:     #fef2f2;
+  --color-error-border: #fecaca;
+
+  --color-warn:         #d97706;
+  --color-warn-bg:      #fffbeb;
+  --color-warn-border:  #fde68a;
+
+  /* ── Text ── */
+  --text-primary:   #0f2d1c;
+  --text-secondary: #2d5a3e;
+  --text-muted:     #7da896;
+  --text-accent:    #1e7a52;
+  --text-inverse:   #ffffff;
+
+  /* ── Fonts ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── Radii ── */
+  --r-sm:   8px;
+  --r-md:   14px;
+  --r-lg:   18px;
+  --r-xl:   24px;
+  --r-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 4px rgba(45, 154, 107, 0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(45, 154, 107, 0.10), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(45, 154, 107, 0.12), 0 4px 12px rgba(0,0,0,0.06);
+
+  /* ── Transitions ── */
+  --t-fast: 0.15s ease;
+  --t-med:  0.25s ease;
+  --t-slow: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  font-size: 16px;
+  color-scheme: light;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-mist); }
+::-webkit-scrollbar-thumb { background: rgba(45, 154, 107, 0.3); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: rgba(45, 154, 107, 0.55); }

@@ -1,0 +1,2113 @@
+/* ================================================================
+   DESIGN SYSTEM — Vehicle Gate UI
+   Font: Poppins & JetBrains Mono
+   Theme: Viantech Vina Emerald Glassmorphism
+================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 🆕 Vòng focus dùng chung cho TOÀN BỘ phần tử tương tác - trước đây chỉ 2
+   chỗ (m-login__input, m-lane__input) tự định nghĩa focus ring riêng, còn
+   lại (nút icon trong bảng, nút phân trang, m-ticker__item vốn là
+   role="button" tabIndex={0}...) đều trông cậy vào outline mặc định của
+   trình duyệt - không khớp ngôn ngữ thiết kế (bo góc, tông thương hiệu) và
+   dễ bị khuất trên nền card bo tròn. :focus-visible (không phải :focus) -
+   CHỈ hiện khi điều hướng bằng bàn phím (Tab), không hiện khi bấm chuột/
+   chạm - đúng hành vi chuẩn, tránh gây rối mắt cho thao tác chính của hệ
+   thống này (chuột/cảm ứng). */
+:focus-visible {
+  outline: 2px solid var(--m-brand-2);
+  outline-offset: 2px;
+  border-radius: var(--m-r-sm);
+}
+
+:root {
+  /* ── Brand Colors (STATUS - giữ nguyên, VÀO=xanh lá đã quen thuộc với
+     bảo vệ, KHÔNG đổi) ── */
+  --m-brand-primary:       #10b981;
+  --m-brand-primary-light: #34d399;
+  --m-brand-primary-dark:  #059669;
+  --m-brand-primary-pale:  #ecfdf5;
+  --m-brand-primary-mist:  #f0fdf4;
+  --m-brand-accent:        #06d6a0;
+  --m-brand-glow:          rgba(16, 185, 129, 0.25);
+
+  /* ── Brand Colors (CHROME - màu thương hiệu thứ 2, dùng cho header,
+     sidebar, nút hành động chính - TÁCH RIÊNG khỏi màu trạng thái VÀO ở
+     trên để 2 vai trò không lẫn vào nhau, tạo chiều sâu/tương phản thay vì
+     toàn bộ giao diện chỉ có 1 tông xanh lá). Teal đậm -> Indigo. */
+  --m-brand-2:             #0d9488;
+  --m-brand-2-light:       #14b8a6;
+  --m-brand-2-dark:        #0f766e;
+  --m-brand-3:             #6366f1;
+  --m-brand-3-light:       #818cf8;
+  --m-brand-3-dark:        #4338ca;
+  /* Thêm điểm dừng xanh dương trung gian (#0369a1) giữa teal và indigo -
+     trước đây nhảy thẳng từ xanh ngọc sang tím tạo 1 "đường nối" khá gắt ở
+     giữa, giống gradient mặc định của template. Có màu cầu nối làm mượt
+     chuyển sắc hơn nhiều. */
+  --m-gradient-chrome: linear-gradient(120deg, var(--m-brand-2-dark) 0%, var(--m-brand-2) 32%, #0369a1 62%, var(--m-brand-3-dark) 100%);
+  --m-gradient-chrome-glow: rgba(13, 148, 136, 0.35);
+
+  /* Nền tối cho sidebar/header - thay cho nền trắng-kính trước đây, tạo
+     tương phản sáng/tối thật sự với vùng nội dung (mint nhạt). */
+  --m-ink-900: #0b1324;
+  --m-ink-800: #111c34;
+  --m-ink-700: #1a2942;
+
+  /* ── Status Colors ── */
+  --m-color-in:            #10b981;
+  --m-color-in-bg:         #d1fae5;
+  --m-color-in-border:     #a7f3d0;
+  --m-color-in-text:       #065f46;
+
+  --m-color-out:           #3b82f6;
+  --m-color-out-bg:        #dbeafe;
+  --m-color-out-border:    #bfdbfe;
+  --m-color-out-text:      #1e40af;
+
+  --m-color-error:         #ef4444;
+  --m-color-error-bg:      #fef2f2;
+  --m-color-error-border:  #fecaca;
+  --m-color-error-text:    #991b1b;
+
+  --m-color-warn:          #f59e0b;
+  --m-color-warn-bg:       #fffbeb;
+  --m-color-warn-border:   #fde68a;
+  --m-color-warn-text:     #92400e;
+
+  /* Biến thể NHẠT của xanh (đã khớp/xử lý xong) và vàng (cảnh báo) - dùng
+     khi cần phân biệt 2 mức độ khác nhau trong CÙNG 1 họ màu (VD "đã xử lý
+     xong" nhạt hơn "đã đối chiếu khớp", hay "AI không đọc ra biển" nhạt hơn
+     "lỗi camera không chụp được") mà không tạo thêm màu mới không liên quan.
+     Chính thức hóa thành token thay vì hardcode trực tiếp trong rule, để
+     tái sử dụng nhất quán nếu cần thêm chỗ khác sau này. */
+  --m-color-in-soft-bg:     #f0fdf9;
+  --m-color-in-soft-border: #6ee7b7;
+  --m-color-soft-warn-bg:     #fdfbea;
+  --m-color-soft-warn-border: #e8d48a;
+
+  /* ── Typography & Neutrals ── */
+  --m-text-primary:        #0f172a;
+  --m-text-secondary:      #334155;
+  --m-text-muted:          #64748b;
+  --m-text-hint:           #94a3b8;
+  --m-text-inverse:        #ffffff;
+
+  /* 'Be Vietnam Pro' đứng TRƯỚC 'Poppins' - Poppins ghép dấu tiếng Việt kép
+     (ệ, ể, ố...) không khít, dấu bị tách rời/lơ lửng sai vị trí, đặc biệt rõ
+     ở chữ đậm/cỡ lớn (VD tiêu đề trang login). Be Vietnam Pro thiết kế
+     riêng cho tiếng Việt, hình học tương đồng Poppins nên đổi không lệch
+     nhận diện thương hiệu - giữ Poppins làm fallback cho ký tự Latin khác. */
+  --m-font-sans: 'Be Vietnam Pro', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --m-font-mono: 'JetBrains Mono', monospace;
+
+  /* ── Surfaces & Glass ── */
+  /* 🐛 FIX: trước đây hardcode lặp lại đúng giá trị #f0fdf4 của
+     --m-brand-primary-mist ở trên - 2 token khác tên cùng giá trị dễ gây
+     nhầm lẫn khi sửa (tưởng đang đổi 2 màu khác nhau). Tham chiếu thẳng tới
+     token gốc để chỉ có 1 nơi định nghĩa giá trị thật. */
+  --m-bg-base:             var(--m-brand-primary-mist);
+  --m-bg-surface:          rgba(255, 255, 255, 0.88);
+  --m-bg-card:             #ffffff;
+  --m-glass-bg:            rgba(255, 255, 255, 0.75);
+  --m-glass-border:        rgba(255, 255, 255, 0.6);
+
+  /* ── Radii ── */
+  --m-r-sm:   8px;
+  --m-r-md:   14px;
+  --m-r-lg:   20px;
+  --m-r-xl:   28px;
+  --m-r-full: 9999px;
+
+  /* ── Shadows ── */
+  --m-shadow-sm: 0 2px 8px rgba(16, 185, 129, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --m-shadow-md: 0 6px 20px rgba(16, 185, 129, 0.09), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --m-shadow-lg: 0 12px 36px rgba(16, 185, 129, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* ── Transitions ── */
+  --m-t-fast: 0.15s ease;
+  --m-t-med:  0.25s ease;
+  --m-t-slow: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  font-size: 16px;
+  font-family: var(--m-font-sans);
+}
+
+body {
+  font-family: var(--m-font-sans);
+  background: var(--m-bg-base);
+  color: var(--m-text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.25); border-radius: var(--m-r-full); }
+::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.5); }
+
+/* ================================================================
+   LOGIN PAGE (.m-login)
+================================================================ */
+.m-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 2 vệt glow khác màu (teal góc trên-trái, indigo góc dưới-phải) thay vì
+     2 vệt cùng tông emerald như trước - nhất quán với bộ nhận diện chrome
+     mới, đồng thời tạo chiều sâu thị giác ngay từ màn hình đầu tiên. */
+  background: radial-gradient(circle at 15% 15%, rgba(13, 148, 136, 0.3), transparent 45%),
+              radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.28), transparent 45%),
+              linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  padding: 1.5rem;
+  font-family: var(--m-font-sans);
+}
+
+.m-login__card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--m-r-xl);
+  padding: 2.75rem 2.25rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
+  animation: m-slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.m-login__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.m-login__logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--m-gradient-chrome);
+  color: white;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+}
+
+.m-login__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--m-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.m-login__subtitle {
+  font-size: 0.85rem;
+  color: var(--m-text-muted);
+  margin-top: 0.35rem;
+  font-weight: 500;
+}
+
+.m-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.m-login__field {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.m-login__label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--m-text-secondary);
+}
+
+.m-login__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.m-login__input-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--m-text-hint);
+  pointer-events: none;
+  transition: color var(--m-t-fast);
+}
+
+.m-login__input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.85rem;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--m-r-md);
+  font-size: 0.95rem;
+  font-family: var(--m-font-sans);
+  color: var(--m-text-primary);
+  background: #f8fafc;
+  transition: border-color var(--m-t-fast), background-color var(--m-t-fast), box-shadow var(--m-t-fast);
+}
+
+.m-login__input:focus {
+  outline: none;
+  border-color: var(--m-brand-2);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.18);
+}
+
+.m-login__input-wrap:focus-within .m-login__input-icon {
+  color: var(--m-brand-2);
+}
+
+.m-login__error {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--m-color-error-bg);
+  border: 1px solid var(--m-color-error-border);
+  border-radius: var(--m-r-md);
+  color: var(--m-color-error-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: m-fadeIn 0.25s ease;
+}
+
+.m-login__btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: var(--m-gradient-chrome);
+  color: white;
+  border: none;
+  border-radius: var(--m-r-md);
+  font-size: 0.975rem;
+  font-weight: 700;
+  font-family: var(--m-font-sans);
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+}
+
+.m-login__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
+}
+
+.m-login__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.m-login__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: m-spin 0.8s linear infinite;
+}
+
+.m-login__footer {
+  text-align: center;
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  color: var(--m-text-hint);
+  font-size: 0.775rem;
+}
+
+/* ================================================================
+   DASHBOARD (.m-board)
+================================================================ */
+.m-board {
+  /* height:100vh (không phải min-height, KHÔNG kèm overflow:hidden) - đây là
+     mốc để 2 cột bên dưới (.m-board__main, .m-board__sidebar) tính flex:1
+     "lấp đầy đúng phần còn lại tới mép màn hình", tránh cả 2 lỗi trước đó:
+     - min-height:100vh (không có mốc cụ thể) khiến 2 cột chỉ cao bằng nội
+       dung tự nhiên của nhau, bên nào nội dung ít hơn bị thừa/thiếu khoảng
+       trắng so với bên kia.
+     - height:100vh kèm overflow:hidden lại cắt cứng, không cho phép cuộn
+       trang khi thật sự cần (VD quá nhiều làn xe trên màn nhỏ).
+     Giữ overflow mặc định (visible): nếu nội dung vẫn dài hơn 100vh thì tự
+     tràn ra ngoài và trang cuộn bình thường, không bị cắt mất. */
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.15), transparent),
+    radial-gradient(ellipse 60% 60% at 90% 90%, rgba(6, 214, 160, 0.08), transparent),
+    #f0fdf4;
+  padding: 0.85rem clamp(0.85rem, 2vw, 1.75rem);
+  gap: 0.85rem;
+}
+
+.m-board__header {
+  /* position+z-index TƯỜNG MINH - .m-board__header dùng backdrop-filter nên
+     tự tạo 1 stacking context riêng; nếu không gán z-index rõ ràng ở CHÍNH
+     header, dropdown user-menu bên trong (dù đã z-index:100) vẫn có thể bị
+     các thẻ .m-lane/.m-ticker phía dưới (cũng dùng backdrop-filter, tạo
+     stacking context riêng của chúng) đè lên tùy trình duyệt/thứ tự compose. */
+  position: relative;
+  z-index: 50;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  /* Nền GRADIENT ĐẬM thay cho trắng-kính trước đây - đây là "thanh nhận
+     diện" của sản phẩm, cần tách bạch khỏi vùng nội dung mint nhạt bên
+     dưới thay vì hòa vào cùng 1 tông. */
+  background: var(--m-gradient-chrome);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--m-r-lg);
+  /* Bóng đổ TRUNG TÍNH (không glow màu) - 1 thanh gradient nổi bật đã đủ là
+     điểm nhấn, thêm hào quang màu quanh nó dễ tạo cảm giác "banner rẻ tiền"
+     thay vì tinh tế. */
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.m-board__header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.m-board__logo {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--m-r-md);
+  overflow: hidden;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--m-shadow-sm);
+}
+
+.m-board__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.m-board__brand-name {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.m-board__brand-desc {
+  margin: 0;
+  font-size: 0.725rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.m-board__header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Pill "kính mờ trên nền tối" - dùng chung cho .m-clock/.m-conn trong header
+   gradient, để đồng bộ 1 ngôn ngữ thị giác thay vì mỗi cái 1 kiểu. */
+.m-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--m-font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 0.45rem 1rem;
+  border-radius: var(--m-r-full);
+}
+
+.m-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 1rem;
+  border-radius: var(--m-r-full);
+  transition: background-color var(--m-t-med), border-color var(--m-t-med), color var(--m-t-med);
+}
+
+.m-conn[data-connected='true'] {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.m-conn[data-connected='false'] {
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.m-conn__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.m-conn[data-connected='true'] .m-conn__dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: m-pulseGreen 2s infinite;
+}
+
+.m-conn[data-connected='false'] .m-conn__dot {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+/* Banner mất kết nối realtime - nền đỏ đặc, chữ trắng, phủ ngang toàn màn
+   hình ngay dưới header: phải thấy được từ xa. Không animation (hiện liên
+   tục có thể nhiều phút, animation vô hạn tốn tài nguyên máy yếu). */
+.m-conn-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--m-r-md);
+  background: #b91c1c;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(185, 28, 28, 0.3);
+}
+
+.m-conn-banner > svg {
+  flex-shrink: 0;
+}
+
+.m-conn-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.m-conn-banner__text strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.m-conn-banner__btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--m-r-full);
+  cursor: pointer;
+}
+
+.m-conn-banner__btn:hover {
+  background: #fee2e2;
+}
+/* Ticker khi mất kết nối - dữ liệu có thể đã cũ, làm mờ để bảo vệ không tin
+   nhầm vào trạng thái đang hiển thị (VD "đang đối chiếu" mãi không đổi). */
+.m-ticker.is-stale .m-ticker__list {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+}
+
+.m-board__content {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.m-board__main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  /* 🐛 FIX: .m-board__main được stretch cao bằng đúng .m-ticker (xem
+     .m-board__sidebar/.m-ticker) - NHƯNG nội dung thẻ làn xe (2 khung camera
+     lớn + nút chụp lại) có thể CAO HƠN đúng mức đó khi màn hình không đủ
+     cao. Trước đây không set overflow ở đây (mặc định visible) nên phần
+     tràn ra cứ VẼ THẲNG RA NGOÀI khung, đẩy thẻ làn xe trông dài hơn hẳn
+     khung "Hoạt động gần đây" bên cạnh dù 2 khung đã được tính bằng nhau về
+     mặt layout - lộ ra 1 dải nền loang lổ (gradient của .m-board) ở khoảng
+     hụt giữa 2 bên. overflow-y:auto khiến phần tràn tự cuộn được bên trong
+     (giống hệt cơ chế .m-ticker__list) thay vì tràn ra ngoài làm lệch 2 cột. */
+  overflow-y: auto;
+}
+
+.m-board__grid {
+  flex: 1 1 auto;
+  /* min-height:0 - mặc định 1 flex item có min-height:auto (co theo NỘI
+     DUNG, không co nhỏ hơn), khiến overflow-y:auto ở .m-board__main (cha)
+     vô tác dụng: nội dung thẻ làn xe cao hơn chỗ có vẫn cứ tràn ra ngoài
+     thay vì bị co lại + cuộn (đã đo thực tế bằng script riêng, xác nhận
+     .m-board__grid tràn quá khung dù cha đã overflow-y:auto - thiếu đúng
+     dòng này). */
+  min-height: 0;
+  display: grid;
+  /* 🐛 FIX: repeat(var(--lane-count), ...) LUÔN ép đúng số cột = số làn
+     trên CÙNG 1 hàng ngang, kể cả khi không đủ chỗ - hệ thống chạy trên
+     TV (màn rộng nhưng có giới hạn), nếu sau này thêm làn thứ 3-4 trở lên
+     các thẻ sẽ bị bóp nhỏ dần/tràn ngang thay vì tự xuống hàng. auto-fit
+     hành xử GIỐNG HỆT repeat(N) khi đủ chỗ (1-2 làn hiện tại không đổi gì
+     về mặt nhìn), chỉ khác khi THIẾU chỗ - tự xuống hàng thay vì bóp méo. */
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1rem;
+  /* stretch (không phải "start") - trước đây thẻ chỉ cao bằng nội dung rồi
+     dừng, để lại khoảng trống rất lớn phía dưới trên màn hình cao (kiosk/TV)
+     - đây là nguyên nhân chính khiến layout trông "chưa xong" chứ không
+     phải do màu sắc. */
+  align-items: stretch;
+}
+
+.m-board__sidebar {
+  /* 🐛 FIX: width cố định 350px không co giãn theo màn hình - trên TV (màn
+     rộng thật, không phải desktop thường), cột làn xe bên trái giãn hết
+     khoảng trống thừa (dùng fr) trong khi sidebar đứng yên 350px, tạo cảm
+     giác lệch tỉ lệ rõ rệt trên màn lớn. clamp() co giãn nhẹ theo bề rộng
+     màn hình (22vw) nhưng vẫn giữ biên an toàn tối thiểu/tối đa. */
+  width: clamp(320px, 22vw, 420px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.m-board__loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--m-brand-primary-dark);
+  font-weight: 600;
+}
+
+.m-board__loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(16, 185, 129, 0.2);
+  border-top-color: var(--m-brand-primary);
+  border-radius: 50%;
+  animation: m-spin 0.8s infinite linear;
+}
+
+/* ================================================================
+   USER MENU (.m-user-menu)
+================================================================ */
+.m-user-menu {
+  position: relative;
+}
+
+.m-user-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+  border-radius: var(--m-r-full);
+  cursor: pointer;
+  font-family: var(--m-font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--m-text-primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast);
+}
+
+.m-user-menu__trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+.m-user-menu__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--m-brand-2), var(--m-brand-3-dark));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.m-user-menu__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 240px;
+  background: white;
+  border-radius: var(--m-r-lg);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--m-shadow-lg);
+  padding: 0.75rem;
+  list-style: none;
+  z-index: 100;
+  animation: m-slideDown 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.m-user-menu__info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+}
+
+.m-user-menu__info-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--m-brand-primary-pale);
+  color: var(--m-brand-primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.m-user-menu__info-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-user-menu__info-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--m-text-primary);
+}
+
+.m-user-menu__info-username {
+  font-size: 0.75rem;
+  color: var(--m-text-muted);
+}
+
+.m-user-menu__info-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--m-brand-primary-dark);
+  background: var(--m-brand-primary-pale);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.2rem;
+  align-self: flex-start;
+}
+
+.m-user-menu__divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0.5rem 0;
+}
+
+.m-user-menu__logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--m-r-sm);
+  color: var(--m-color-error-text);
+  font-family: var(--m-font-sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--m-t-fast);
+}
+
+.m-user-menu__logout-btn:hover {
+  background: var(--m-color-error-bg);
+}
+
+/* Mục trung tính trong dropdown (VD "Trang quản trị") - cùng khuôn với
+   .m-user-menu__logout-btn nhưng màu trung tính, hover dùng tông thương
+   hiệu chrome thay vì đỏ (đỏ chỉ dành riêng cho hành động phá hủy/đăng xuất). */
+.m-user-menu__item-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--m-r-sm);
+  color: var(--m-text-secondary);
+  font-family: var(--m-font-sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--m-t-fast), color var(--m-t-fast);
+}
+
+.m-user-menu__item-btn:hover {
+  background: rgba(13, 148, 136, 0.08);
+  color: var(--m-brand-2-dark);
+}
+
+/* ================================================================
+   LANE CARD (.m-lane)
+================================================================ */
+.m-lane {
+  /* Bỏ backdrop-filter (blur) - tốn GPU compositing đáng kể cho 1 khối luôn
+     hiển thị + hay đổi nội dung (ảnh, banner) trên máy cấu hình yếu, gây
+     giật khi cuộn/hover. Nền gần như đặc (opacity 0.92) nên bỏ blur không
+     khác biệt mấy về mặt nhìn. */
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--m-r-lg);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--m-shadow-md);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: 100%;
+  position: relative;
+}
+
+.m-lane::before {
+  content: '';
+  position: absolute;
+  top: 18px; bottom: 18px; left: 0; width: 5px;
+  background: linear-gradient(180deg, var(--m-brand-primary-light), var(--m-brand-primary), var(--m-brand-accent));
+  border-radius: 0 4px 4px 0;
+}
+
+/* "Vừa quẹt thẻ" - nhấn mạnh RÕ để phân biệt với làn khác đang chờ, thay
+   vì mọi thẻ trông nhạt nhòa như nhau (xem LaneCard.tsx, tự tắt sau 6s).
+   Viền + quầng sáng xanh lá (đúng màu thương hiệu/trạng thái, không thêm
+   màu mới) - KHÔNG đổi kích thước/layout bên trong thẻ (đặc biệt khối ảnh
+   camera giữ nguyên bố cục lớn như bình thường). */
+.m-lane.is-just-scanned {
+  border: 2px solid var(--m-brand-primary);
+  box-shadow: 0 0 0 6px var(--m-brand-glow), 0 28px 60px rgba(16, 185, 129, 0.28);
+  animation: m-justScannedPulse 2.2s ease-out 1;
+}
+
+.m-lane__just-scanned-badge {
+  position: absolute;
+  top: -14px;
+  left: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--m-brand-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--m-r-full);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  z-index: 1;
+}
+
+.m-lane__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.m-lane__title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.m-lane__header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.m-lane__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  transition: background-color var(--m-t-med), box-shadow var(--m-t-med);
+}
+
+.m-lane__dot[data-ready='true'] {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+.m-lane__name {
+  font-size: clamp(1.1rem, 1.4vw + 0.7rem, 1.4rem);
+  font-weight: 800;
+  color: var(--m-text-primary);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nhãn CHỮ trạng thái sẵn sàng - trước đây chỉ có 1 chấm tròn 10px, khó nhận
+   ra ý nghĩa (xanh = gì?) nhất là nhìn từ xa. Giờ có chữ rõ ràng đi kèm. */
+.m-lane__status-text {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--m-r-full);
+  white-space: nowrap;
+}
+
+.m-lane__status-text[data-ready='true'] {
+  color: var(--m-color-in-text);
+  background: var(--m-color-in-bg);
+  border: 1px solid var(--m-color-in-border);
+}
+
+.m-lane__status-text[data-ready='false'] {
+  color: var(--m-color-warn);
+  background: var(--m-color-warn-bg);
+  border: 1px solid var(--m-color-warn-border);
+  animation: m-warningPulse 1.6s ease-in-out infinite;
+}
+
+.m-lane__cam-badge {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--m-brand-primary-dark);
+  background: var(--m-brand-primary-pale);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--m-r-full);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+/* Ghép đôi đầu đọc thẻ qua cổng COM (Web Serial API) - xem LaneCard.tsx */
+.m-lane__reader-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.m-lane__reader-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m-r-full);
+  white-space: nowrap;
+}
+
+.m-lane__reader-status[data-state='connected'] {
+  color: var(--m-color-in-text);
+  background: var(--m-color-in-bg);
+}
+
+.m-lane__reader-status[data-state='connecting'] {
+  color: var(--m-color-warn);
+  background: var(--m-color-warn-bg);
+}
+
+.m-lane__reader-status[data-state='disconnected'],
+.m-lane__reader-status[data-state='error'] {
+  color: var(--m-color-error-text);
+  background: var(--m-color-error-bg);
+}
+
+.m-lane__reader-pair-btn {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--m-brand-2-dark);
+  background: transparent;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m-r-full);
+  cursor: pointer;
+  transition: background-color var(--m-t-fast), opacity var(--m-t-fast);
+}
+
+.m-lane__reader-pair-btn:hover:not(:disabled) {
+  background: var(--m-brand-primary-mist);
+}
+
+.m-lane__reader-pair-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.m-lane__input-row {
+  width: 100%;
+  position: relative;
+}
+
+/* Làn đang nhận thẻ (ô quét có focus) - dùng outline để KHÔNG đổi kích
+   thước thẻ và không đè viền của trạng thái "vừa quẹt thẻ". */
+.m-lane.is-receiving {
+  outline: 3px solid var(--m-brand-primary);
+  /* Vẽ vào trong: .m-board__main có overflow-y:auto sẽ cắt outline ra ngoài. */
+  outline-offset: -3px;
+}
+
+.m-lane.is-receiving .m-lane__input {
+  padding-right: 10rem; /* chừa chỗ cho chip "ĐANG NHẬN THẺ" */
+}
+
+.m-lane__receiving {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m-r-full);
+  background: var(--m-brand-primary);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.m-lane__receiving-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: m-receivingBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes m-receivingBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-lane__receiving-dot { animation: none; }
+}
+
+/* Ô quét KHÔNG có focus - chữ gợi ý phải đọc được (không phải xám nhạt). */
+.m-lane:not(.is-receiving) .m-lane__input::placeholder {
+  color: #b45309;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.m-lane__input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border: 2px solid transparent;
+  border-radius: var(--m-r-md);
+  font-family: var(--m-font-mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--m-text-primary);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 1px rgba(0,0,0,0.06);
+  transition: border-color var(--m-t-fast), background-color var(--m-t-fast), box-shadow var(--m-t-fast);
+}
+
+.m-lane__input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--m-brand-primary);
+  box-shadow: 0 0 0 4px var(--m-brand-glow);
+}
+
+.m-lane__error {
+  padding: 0.75rem 1rem;
+  background: var(--m-color-error-bg);
+  border-left: 4px solid var(--m-color-error);
+  border-radius: var(--m-r-sm);
+  color: var(--m-color-error-text);
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m-lane__placeholder {
+  /* flex:1 - nở ra lấp đầy phần còn lại của thẻ (thẻ giờ cao 100% ô grid,
+     xem .m-board__grid) thay vì chỉ cao 100px cố định rồi để trống phía
+     dưới toàn thẻ - đây là khoảng trống rỗng lớn nhất trên màn quét thẻ. */
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--m-text-hint);
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: 2px dashed rgba(148, 163, 184, 0.3);
+  border-radius: var(--m-r-md);
+  background: rgba(248, 250, 252, 0.4);
+}
+
+.m-lane__result {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: m-popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Banner to, phủ hết chiều ngang - đây là thông tin QUAN TRỌNG NHẤT của cả
+   thẻ (xe đang vào hay ra), trước đây chỉ là 1 pill nhỏ cạnh giờ nên rất
+   khó quét mắt nhanh, nhất là nhìn từ xa hoặc màn hình lớn treo tường. */
+.m-lane__direction-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--m-r-md);
+  color: white;
+}
+
+.m-lane__direction-banner.is-in {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.3);
+}
+
+.m-lane__direction-banner.is-out {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.3);
+}
+
+.m-lane__direction-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  font-size: clamp(1.05rem, 1vw + 0.85rem, 1.35rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.m-lane__time {
+  font-family: var(--m-font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--m-r-full);
+  flex-shrink: 0;
+}
+
+/* Mã thẻ trong banner - thông tin phụ, nhỏ và mờ hơn chữ VÀO/RA. */
+.m-lane__card-code {
+  margin-left: auto;
+  font-family: var(--m-font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Khối biển số + kết quả đối chiếu (xem LaneCard.tsx). Viền/nền theo kết
+   quả: LỆCH = đỏ đậm (cần xử lý ngay), KHỚP = xanh (cho xe ra), còn lại
+   trung tính. */
+.m-lane__plates {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--m-r-md);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: background-color var(--m-t-med), border-color var(--m-t-med);
+}
+
+.m-lane__plates[data-verdict='match'] {
+  background: var(--m-color-in-bg);
+  border-color: var(--m-color-in-border);
+}
+
+.m-lane__plates[data-verdict='mismatch'] {
+  background: var(--m-color-error-bg);
+  border: 2px solid var(--m-color-error);
+  /* Nháy có giới hạn số lần (không infinite) - đủ gây chú ý, không tốn GPU. */
+  animation: m-warningPulse 1.6s ease-in-out 4;
+}
+
+.m-lane__plate-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.m-lane__plate-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--m-text-muted);
+}
+
+/* Chip biển số - mô phỏng biển thật (nền vàng nhạt, chữ đen đậm, mono). */
+.m-lane__plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--m-font-mono);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 0.8vw + 0.8rem, 1.45rem);
+  letter-spacing: 0.08em;
+  color: #171717;
+  background: linear-gradient(to bottom, #fefce8, #fef08a);
+  border: 2px solid #eab308;
+  padding: 0.2rem 0.8rem;
+  border-radius: var(--m-r-sm);
+  white-space: nowrap;
+}
+
+/* Chưa có biển (đang đọc/không đọc được/không có biển lúc vào) - trông rõ
+   là "chưa có dữ liệu", không giả dạng 1 biển số thật. */
+.m-lane__plate.is-empty {
+  font-family: var(--m-font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--m-text-muted);
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+}
+
+.m-lane__verdict {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--m-r-full);
+  white-space: nowrap;
+}
+
+.m-lane__verdict[data-verdict='match'] {
+  background: var(--m-color-in);
+  color: #ffffff;
+}
+
+.m-lane__verdict[data-verdict='mismatch'] {
+  background: var(--m-color-error);
+  color: #ffffff;
+}
+
+.m-lane__verdict[data-verdict='reading'] {
+  background: #e2e8f0;
+  color: var(--m-text-secondary);
+}
+
+.m-lane__verdict[data-verdict='failed'],
+.m-lane__verdict[data-verdict='unknown'] {
+  background: var(--m-color-warn-bg);
+  color: var(--m-color-warn-text);
+  border: 1px solid var(--m-color-warn-border);
+}
+
+.m-lane__photos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.m-lane__recapture-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.75rem auto 0;
+  width: 85%;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m-color-warn-text);
+  background: var(--m-color-warn-bg);
+  border: 1px solid var(--m-color-warn);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--m-r-full);
+  cursor: pointer;
+  transition: filter var(--m-t-fast), opacity var(--m-t-fast);
+}
+
+.m-lane__recapture-btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.m-lane__recapture-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.m-lane__photo {
+  width: 85%;
+  margin: 0 auto;
+  border-radius: var(--m-r-md);
+  overflow: hidden;
+  background: #f1f5f9;
+  aspect-ratio: 16 / 9;
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.m-lane__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Ảnh chụp trước đây "bụp" hiện ra ngay khi tải xong, không có hiệu ứng gì -
+   thêm fade-in + trượt nhẹ lên để cảm giác mượt hơn, đồng bộ với animation
+   m-popIn của cả khối .m-lane__result. */
+.m-lane__photo-img {
+  animation: m-photoFadeIn 0.4s ease-out;
+}
+
+@keyframes m-photoFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.m-lane__photo-tag {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ================================================================
+   TICKER SIDEBAR (.m-ticker)
+================================================================ */
+.m-ticker {
+  /* Bỏ backdrop-filter (blur) - list này liên tục thêm/đổi item theo thời
+     gian thực, blur phải tính lại mỗi lần repaint, dễ giật trên máy yếu. */
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--m-r-lg);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--m-shadow-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* flex:1 + min-height:0 (KHÔNG max-height cố định) - .m-board__sidebar
+     (cha) tự stretch cao BẰNG ĐÚNG .m-board__main (cột làn xe) nhờ
+     align-items:stretch mặc định của flex row ở .m-board__content, nên
+     khung này chỉ cần lấy đúng chiều cao đó. Đã từng thử ép max-height cố
+     định (VD 80vh) để "chắc chắn có scroll", nhưng hệ quả là khung NGẮN HƠN
+     cột làn xe, để lộ khoảng nền gradient loang lổ phía dưới (xem lỗi thực
+     tế đã gặp) - stretch mới là cách đúng, cuộn bên trong (overflow:hidden ở
+     đây + overflow-y:auto ở .m-ticker__list) vẫn xảy ra bình thường khi danh
+     sách dài hơn đúng chiều cao đã stretch. */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.m-ticker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m-ticker__title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--m-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.m-ticker__list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding-right: 4px;
+  /* overflow-y: auto khiến trình duyệt tự set overflow-x thành auto luôn
+     (quy tắc CSS: 1 trục scroll thì trục kia không còn "visible") - item
+     phóng to + trượt sang trái lúc hover bị mép trái của khung cắt mất 1
+     phần vì không đủ khoảng đệm. Cần đủ chỗ cho CẢ 2 hiệu ứng cộng lại:
+     scale(1.03) neo phải (transform-origin: right center) làm mép trái
+     item nở thêm ~3% bề rộng (~10px với item ~330px), CỘNG THÊM
+     translateX(-6px) dịch tiếp sang trái - tổng cộng ~16px, không phải
+     chỉ riêng 6px của translateX. */
+  padding-left: 18px;
+  /* Thanh cuộn TỰ VẼ, luôn rõ ràng - mặc định trình duyệt (đặc biệt Windows/
+     macOS kiểu overlay) thường vẽ thanh cuộn rất mảnh/ẩn tới khi hover, dễ
+     khiến trông như "không cuộn được" dù thực ra vẫn cuộn bình thường. Firefox
+     dùng scrollbar-width/-color, Chrome/Edge/Safari dùng các pseudo-element
+     ::-webkit-scrollbar-*. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--m-brand-2) transparent;
+}
+
+.m-ticker__list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.m-ticker__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.m-ticker__list::-webkit-scrollbar-thumb {
+  background-color: var(--m-brand-2);
+  border-radius: 999px;
+}
+
+.m-ticker__list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--m-brand-primary-dark);
+}
+
+.m-ticker__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--m-text-hint);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.m-ticker__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--m-r-sm);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--m-t-fast), box-shadow var(--m-t-fast),
+    border-color var(--m-t-fast), background-color var(--m-t-fast);
+  transform-origin: right center;
+}
+
+.m-ticker__item:hover {
+  border-color: var(--m-brand-primary);
+  transform: scale(1.03) translateX(-6px);
+  box-shadow: var(--m-shadow-sm);
+}
+
+.m-ticker__item.is-warning {
+  border-left: 4px solid var(--m-color-error);
+  background: #fff7ed;
+  /* Số lần lặp CÓ HẠN (không phải infinite) - mục cảnh báo có thể nằm trong
+     danh sách rất lâu (tới khi bị đẩy khỏi 16 mục gần nhất); animate
+     box-shadow vô hạn cho nhiều mục cùng lúc là nguồn giật chính trên máy
+     yếu. Nháy vài lần đủ để gây chú ý lúc mới xuất hiện, sau đó đứng yên
+     (màu/viền đỏ vẫn còn, không mất dấu hiệu cảnh báo). */
+  animation: m-warningPulse 1.6s ease-in-out 4;
+}
+
+/* Lượt RA đã đối chiếu xong và KHỚP biển số - dấu hiệu tích cực rõ ràng để
+   bảo vệ yên tâm cho xe ra, không lẫn với trạng thái "chưa xử lý xong". */
+.m-ticker__item.is-matched {
+  border-left: 4px solid var(--m-color-in);
+  background: var(--m-color-in-bg);
+}
+
+/* 🆕 ĐƠN GIẢN HÓA: trước đây is-in-done/is-capture-warning/is-processing-
+   failed/is-lost-card đều tô MÀU NỀN riêng như is-warning/is-matched - tổng
+   cộng 6 màu nền phẳng khác nhau trong cùng 1 danh sách, quá tải nhận thức
+   khi bảo vệ phải phân biệt nhiều sắc thái nhạt/đậm cùng lúc dưới áp lực.
+   Chỉ 2 trạng thái THẬT SỰ cần hành động/xác nhận ngay (is-warning: nghi
+   gian lận: is-matched: xác nhận an toàn cho xe ra) mới tô nền toàn thẻ.
+   4 trạng thái còn lại chỉ để THÔNG BÁO/PHÂN LOẠI (không cần bảo vệ hành
+   động ngay) - giữ nền trắng mặc định, chỉ còn viền trái màu + icon màu
+   tương ứng để vẫn phân biệt được bằng mắt, nhưng nhẹ nhàng hơn hẳn. */
+.m-ticker__item.is-in-done {
+  border-left: 4px solid var(--m-color-in-soft-border);
+}
+
+.m-ticker__item.is-capture-warning {
+  border-left: 4px solid var(--m-color-warn);
+}
+
+.m-ticker__item.is-processing-failed {
+  border-left: 4px solid var(--m-color-soft-warn-border);
+}
+
+.m-ticker__item.is-lost-card {
+  border-left: 4px solid #7c3aed;
+}
+
+.m-ticker__badge {
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  /* "RA" và "VÀO" dài ngắn khác nhau - không có min-width/text-align:center
+     thì badge co theo đúng độ dài chữ, đẩy tên làn phía sau lệch cột theo
+     hướng vào/ra. Cố định 1 độ rộng chung để tên làn luôn bắt đầu cùng 1
+     cột dọc, dễ quét mắt xuống danh sách hơn. */
+  min-width: 2.75rem;
+  text-align: center;
+}
+
+.m-ticker__badge.is-in { background: var(--m-color-in-bg); color: var(--m-color-in-text); }
+.m-ticker__badge.is-out { background: var(--m-color-out-bg); color: var(--m-color-out-text); }
+
+.m-ticker__lane { color: var(--m-text-secondary); font-weight: 700; }
+.m-ticker__time { margin-left: auto; color: var(--m-text-hint); font-family: var(--m-font-mono); font-size: 0.75rem; }
+
+.m-ticker__detail-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--m-text-hint);
+  padding: 0.2rem;
+  border-radius: 4px;
+  transition: color var(--m-t-fast), background-color var(--m-t-fast);
+}
+
+.m-ticker__detail-btn:hover {
+  color: var(--m-text-primary);
+  background: #f1f5f9;
+}
+
+/* ================================================================
+   MODAL (.m-modal-overlay, .m-modal)
+================================================================ */
+.m-modal-overlay {
+  position: fixed;
+  inset: 0;
+  /* Trình duyệt mặc định <dialog> có width/height: fit-content (KHÔNG phải
+     auto) - nếu không ghi đè, dialog co lại theo kích thước nội dung dù đã
+     set inset:0, khiến nó dồn về góc trên-trái thay vì phủ kín màn hình để
+     flex center phần .m-modal bên trong hoạt động đúng. */
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: m-fadeIn 0.25s ease;
+  border: none;
+}
+
+.m-modal {
+  width: min(1280px, 96%);
+  max-height: 92vh;
+  background: white;
+  border-radius: var(--m-r-xl);
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+  animation: m-slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.m-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.m-modal__header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--m-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--m-text-hint);
+  padding: 0.35rem;
+  border-radius: var(--m-r-sm);
+  transition: color var(--m-t-fast), background-color var(--m-t-fast);
+}
+
+.m-modal__close:hover { background: #f1f5f9; color: var(--m-text-primary); }
+
+.m-modal__body {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  max-height: calc(92vh - 76px); /* trừ chiều cao header modal */
+  overflow-y: auto;
+}
+
+.m-modal__meta {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.m-modal__meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* 🐛 FIX: không có gap - khi giá trị (dd) dài phải xuống dòng (VD "Không
+     có ảnh nào được chụp/upload"), space-between hết chỗ để tự chừa
+     khoảng cách, làm nhãn và giá trị dính sát nhau ngay dòng đầu. */
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: var(--m-r-sm);
+  font-size: 0.875rem;
+}
+
+/* 🐛 FIX: không có flex-shrink:0/white-space:nowrap - khi giá trị bên cạnh
+   (dd) chiếm nhiều chỗ hơn bình thường (VD badge "Không khớp" dài hơn hẳn
+   "#280"/"RA"), flexbox tự co nhãn lại để nhường chỗ, làm nhãn "Khớp biển
+   số" bị xuống dòng lởm chởm dù còn thừa khoảng trắng bên phải. */
+.m-modal__meta-label {
+  color: var(--m-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Hàng nhãn+giá trị bên trong 1 item xếp dọc (VD "Khớp biển số": nhãn +
+   badge nằm cùng 1 hàng ngang bình thường, nút xác nhận thêm ở hàng RIÊNG
+   bên dưới - xem .m-modal__meta-item--stack). */
+.m-modal__meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+/* Biến thể xếp DỌC cho CẢ ITEM (không phải hàng nhãn/giá trị) - dùng khi
+   item cần thêm 1 khối full-width bên dưới hàng nhãn/giá trị (VD nút xác
+   nhận + dòng lỗi của "Khớp biển số" khi Không khớp). */
+.m-modal__meta-item--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.m-modal__meta-item--stack .m-modal__meta-value { width: 100%; }
+.m-modal__meta-value {
+  color: var(--m-text-primary);
+  font-weight: 700;
+  text-align: right;
+  min-width: 0;
+}
+
+/* 🆕 Thay cho inline style={{ color: ... }} rải rác trong DetailModal.tsx -
+   gom thành class dùng chung, dễ maintain/theme hơn 1 chỗ duy nhất thay vì
+   lặp lại giá trị màu ở nhiều nơi trong component. */
+.m-modal__inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m-modal__inline-status.is-in,
+.m-modal__inline-status.is-done { color: var(--m-color-in); }
+.m-modal__inline-status.is-out { color: var(--m-color-out); }
+.m-modal__inline-status.is-pending,
+.m-modal__inline-status.is-processing { color: var(--m-text-muted); }
+.m-modal__inline-status.is-failed,
+.m-modal__inline-status.is-mismatch { color: var(--m-color-error); font-weight: 800; }
+
+.m-modal__hint {
+  font-weight: 500;
+  color: var(--m-text-hint);
+  margin-left: 6px;
+}
+
+.m-modal__confirm-error {
+  color: var(--m-color-error);
+  font-size: 0.78rem;
+}
+
+.m-modal__confirm-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Bọc chung khi có TỚI 2 khối ảnh (RA + đối chiếu VÀO) - .m-modal__body vốn
+   là flex HÀNG NGANG (cùng cấp với .m-modal__meta), nếu không có wrapper
+   này, 2 <section class="m-modal__photos"> sẽ bị coi là 2 flex-item riêng
+   và xếp CẠNH NHAU thay vì xếp CHỒNG lên nhau theo chiều dọc. */
+.m-modal__photos-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.m-modal__photos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.m-modal__photos-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--m-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.m-modal__photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1rem;
+}
+
+.m-modal__photo-item {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #f1f5f9;
+  border-radius: var(--m-r-md);
+  overflow: hidden;
+  box-shadow: var(--m-shadow-sm);
+}
+
+.m-modal__photo-label {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  color: white;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.m-modal__no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  color: var(--m-text-hint);
+  font-size: 0.85rem;
+}
+
+/* ================================================================
+   TOAST (.m-toast-container, .m-toast)
+================================================================ */
+.m-toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 380px;
+}
+
+/* Cột chung chứa nhiều nhóm toast (xem ScanStation) - các .m-toast-container
+   bên trong thành static để xếp nối tiếp nhau thay vì cùng fixed 1 góc. */
+.m-toast-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 380px;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+}
+
+.m-toast-stack .m-toast-container {
+  position: static;
+}
+
+.m-toast {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border-radius: var(--m-r-md);
+  padding: 0.85rem 1.15rem;
+  box-shadow: 0 10px 30px rgba(220, 38, 38, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.85rem;
+  animation: m-slideInRight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.m-toast__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.m-toast__detail {
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+  opacity: 0.95;
+}
+
+.m-toast__dismiss {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.1rem;
+  opacity: 0.8;
+  transition: opacity var(--m-t-fast);
+}
+
+.m-toast__dismiss:hover { opacity: 1; }
+
+.m-toast__action {
+  margin-top: 0.55rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #ffffff;
+  border: none;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--m-r-full);
+  cursor: pointer;
+}
+
+.m-toast__action:hover { background: #fee2e2; }
+
+/* Biến thể cam - dùng cho cảnh báo camera/chụp ảnh thất bại, phân biệt với
+   cảnh báo biển số không khớp (đỏ) để bảo vệ nhận ra ngay loại vấn đề. */
+.m-toast--warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 10px 30px rgba(217, 119, 6, 0.35);
+}
+
+/* Biến thể xanh lá - thông báo THÀNH CÔNG (VD đăng nhập/đăng xuất) - dùng
+   chung khung .m-toast nhưng màu trung tính tích cực, không lẫn với đỏ/cam
+   (đều là cảnh báo/lỗi). */
+.m-toast--success {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  box-shadow: 0 10px 30px rgba(21, 128, 61, 0.3);
+}
+
+/* ================================================================
+   ROUTE LOADING BAR (.m-route-loading) - xem RouteLoadingBar.tsx.
+   KHÔNG dùng cho ScanStation ("/") - component tự bỏ qua route đó.
+================================================================ */
+.m-route-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 85%;
+  background: var(--m-gradient-chrome);
+  box-shadow: 0 0 10px var(--m-gradient-chrome-glow);
+  z-index: 99999;
+  transition: width 0.3s ease, opacity 0.25s ease;
+  opacity: 1;
+}
+
+.m-route-loading[data-full='true'] {
+  width: 100%;
+  opacity: 0;
+}
+
+/* ================================================================
+   THEME ĐÊM (.m-board[data-theme="night"]) - TỰ ĐỘNG theo giờ hiện tại
+   (xem ScanStation.tsx), KHÔNG đổi bất kỳ token màu gốc nào trong :root
+   (đặc biệt xanh lá thương hiệu - đã quyết định giữ nguyên, xem đầu file) -
+   chỉ ghi đè MÀU NỀN/BỀ MẶT trong phạm vi .m-board lúc đang ở chế độ đêm,
+   để bảo vệ trực ca đêm đỡ chói mắt trong phòng gác tối. Layout/kích thước
+   giữ NGUYÊN 100% (đặc biệt khối ảnh camera - không thu nhỏ khác gì ban
+   ngày), chỉ đổi màu.
+================================================================ */
+.m-night-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--m-r-full);
+  border: 1px solid rgba(6, 214, 160, 0.4);
+  color: #6ee7b7;
+  background: rgba(6, 214, 160, 0.12);
+}
+
+.m-board[data-theme='night'] {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(16, 185, 129, 0.1), transparent),
+    radial-gradient(ellipse 55% 55% at 90% 95%, rgba(6, 214, 160, 0.05), transparent),
+    var(--m-ink-900);
+}
+
+.m-board[data-theme='night'] .m-lane,
+.m-board[data-theme='night'] .m-ticker {
+  background: rgba(17, 28, 52, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.m-board[data-theme='night'] .m-lane__name,
+.m-board[data-theme='night'] .m-ticker__title,
+.m-board[data-theme='night'] .m-ticker__lane {
+  color: #eef2f6;
+}
+
+.m-board[data-theme='night'] .m-ticker__time {
+  color: #8b96ac;
+}
+
+.m-board[data-theme='night'] .m-lane__input {
+  background: #0e1830;
+  color: #5f6b85;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.m-board[data-theme='night'] .m-lane__input:focus {
+  background: #16213b;
+}
+
+.m-board[data-theme='night'] .m-lane:not(.is-receiving) .m-lane__input::placeholder {
+  color: #fbbf24;
+}
+
+.m-board[data-theme='night'] .m-lane__placeholder {
+  color: #5f6b85;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.m-board[data-theme='night'] .m-lane__plates {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.m-board[data-theme='night'] .m-lane__plates[data-verdict='match'] {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.m-board[data-theme='night'] .m-lane__plates[data-verdict='mismatch'] {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.m-board[data-theme='night'] .m-lane__plate-label {
+  color: #8b96ac;
+}
+
+.m-board[data-theme='night'] .m-lane__plate.is-empty {
+  color: #8b96ac;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.m-board[data-theme='night'] .m-lane__verdict[data-verdict='reading'] {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.m-board[data-theme='night'] .m-lane__verdict[data-verdict='failed'],
+.m-board[data-theme='night'] .m-lane__verdict[data-verdict='unknown'] {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.m-board[data-theme='night'] .m-ticker__header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.m-board[data-theme='night'] .m-ticker__item {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.m-board[data-theme='night'] .m-ticker__item.is-matched {
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.m-board[data-theme='night'] .m-ticker__item.is-warning {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.m-board[data-theme='night'] .m-ticker__badge.is-in {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+.m-board[data-theme='night'] .m-ticker__badge.is-out {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+/* ================================================================
+   ANIMATIONS
+================================================================ */
+@keyframes m-slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes m-slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes m-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes m-popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes m-slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes m-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes m-pulseGreen {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes m-warningPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.2); }
+}
+
+@keyframes m-justScannedPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45), 0 28px 60px rgba(16, 185, 129, 0.28); }
+  70% { box-shadow: 0 0 0 14px rgba(16, 185, 129, 0), 0 28px 60px rgba(16, 185, 129, 0.28); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 28px 60px rgba(16, 185, 129, 0.28); }
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media (max-width: 1024px) {
+  .m-board__content { flex-direction: column; }
+  .m-board__sidebar { width: 100%; max-height: 300px; }
+  .m-board__grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .m-board { padding: 0.5rem; }
+  .m-board__header { padding: 0.6rem 1rem; }
+  .m-login__card { padding: 2rem 1.5rem; }
+  .m-modal__body { flex-direction: column; }
+  .m-modal__meta { flex: none; }
+}
